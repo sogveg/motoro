@@ -38,6 +38,17 @@ export default function NewCarPage() {
     regnr: "",
     images: [] as string[],
     status: "active",
+    // Nye felt
+    power: "",
+    drive_type: "",
+    body_type: "",
+    seats: "",
+    doors: "",
+    first_registration: "",
+    interior_color: "",
+    owners: "",
+    next_eu: "",
+    range_km: "",
   })
 
   function updateForm(field: string, value: string | number | string[]) {
@@ -77,6 +88,16 @@ export default function NewCarPage() {
         finncode: data.finncode || finncode,
         regnr: data.regnr || form.regnr,
         images: data.images || form.images,
+        power: data.power?.toString() || form.power,
+        drive_type: data.drive_type || form.drive_type,
+        body_type: data.body_type || form.body_type,
+        seats: data.seats?.toString() || form.seats,
+        doors: data.doors?.toString() || form.doors,
+        first_registration: data.first_registration || form.first_registration,
+        interior_color: data.interior_color || form.interior_color,
+        owners: data.owners?.toString() || form.owners,
+        next_eu: data.next_eu || form.next_eu,
+        range_km: data.range_km?.toString() || form.range_km,
       })
     } catch {
       setFinnError("Noe gikk galt. Sjekk finnkoden og prov igjen.")
@@ -109,6 +130,16 @@ export default function NewCarPage() {
       regnr: form.regnr || null,
       images: form.images,
       status: form.status,
+      power: form.power ? parseInt(form.power) : null,
+      drive_type: form.drive_type || null,
+      body_type: form.body_type || null,
+      seats: form.seats ? parseInt(form.seats) : null,
+      doors: form.doors ? parseInt(form.doors) : null,
+      first_registration: form.first_registration || null,
+      interior_color: form.interior_color || null,
+      owners: form.owners ? parseInt(form.owners) : null,
+      next_eu: form.next_eu || null,
+      range_km: form.range_km ? parseInt(form.range_km) : null,
     })
 
     if (dbError) {
@@ -182,8 +213,8 @@ export default function NewCarPage() {
         </TabsContent>
       </Tabs>
 
-      {/* Car form */}
       <div className="grid lg:grid-cols-2 gap-6">
+        {/* Grunninfo */}
         <Card>
           <CardHeader>
             <CardTitle>Bilinformasjon</CardTitle>
@@ -202,7 +233,7 @@ export default function NewCarPage() {
 
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="year">Arsmodell</Label>
+                <Label htmlFor="year">Årsmodell</Label>
                 <Input id="year" type="number" value={form.year} onChange={(e) => updateForm("year", parseInt(e.target.value) || 0)} />
               </div>
               <div className="space-y-2">
@@ -262,6 +293,91 @@ export default function NewCarPage() {
           </CardContent>
         </Card>
 
+        {/* Ekstra spesifikasjoner */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Ekstra spesifikasjoner</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="power">Effekt (hk)</Label>
+                <Input id="power" type="number" value={form.power} onChange={(e) => updateForm("power", e.target.value)} placeholder="F.eks. 204" />
+              </div>
+              <div className="space-y-2">
+                <Label>Hjuldrift</Label>
+                <Select value={form.drive_type} onValueChange={(v) => updateForm("drive_type", v)}>
+                  <SelectTrigger><SelectValue placeholder="Velg..." /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Forhjulsdrift">Forhjulsdrift</SelectItem>
+                    <SelectItem value="Bakhjulsdrift">Bakhjulsdrift</SelectItem>
+                    <SelectItem value="Firehjulsdrift">Firehjulsdrift</SelectItem>
+                    <SelectItem value="AWD">AWD</SelectItem>
+                    <SelectItem value="4x4">4x4</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Karosseri</Label>
+                <Select value={form.body_type} onValueChange={(v) => updateForm("body_type", v)}>
+                  <SelectTrigger><SelectValue placeholder="Velg..." /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="SUV">SUV</SelectItem>
+                    <SelectItem value="Sedan">Sedan</SelectItem>
+                    <SelectItem value="Stasjonsvogn">Stasjonsvogn</SelectItem>
+                    <SelectItem value="Hatchback">Hatchback</SelectItem>
+                    <SelectItem value="Coupé">Coupé</SelectItem>
+                    <SelectItem value="Cabriolet">Cabriolet</SelectItem>
+                    <SelectItem value="Minivan">Minivan</SelectItem>
+                    <SelectItem value="Pickup">Pickup</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="interior_color">Interiørfarge</Label>
+                <Input id="interior_color" value={form.interior_color} onChange={(e) => updateForm("interior_color", e.target.value)} placeholder="F.eks. Sort" />
+              </div>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="seats">Antall seter</Label>
+                <Input id="seats" type="number" value={form.seats} onChange={(e) => updateForm("seats", e.target.value)} placeholder="F.eks. 5" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="doors">Antall dører</Label>
+                <Input id="doors" type="number" value={form.doors} onChange={(e) => updateForm("doors", e.target.value)} placeholder="F.eks. 5" />
+              </div>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="first_registration">1. gang reg.</Label>
+                <Input id="first_registration" value={form.first_registration} onChange={(e) => updateForm("first_registration", e.target.value)} placeholder="F.eks. 03.03.2022" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="owners">Antall eiere</Label>
+                <Input id="owners" type="number" value={form.owners} onChange={(e) => updateForm("owners", e.target.value)} placeholder="F.eks. 1" />
+              </div>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="next_eu">Neste EU-kontroll</Label>
+                <Input id="next_eu" value={form.next_eu} onChange={(e) => updateForm("next_eu", e.target.value)} placeholder="F.eks. 2027" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="range_km">Rekkevidde WLTP (km)</Label>
+                <Input id="range_km" type="number" value={form.range_km} onChange={(e) => updateForm("range_km", e.target.value)} placeholder="F.eks. 465" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Detaljer */}
         <Card>
           <CardHeader>
             <CardTitle>Detaljer</CardTitle>

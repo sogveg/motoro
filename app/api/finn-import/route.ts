@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 
 // Helper: extract a specification value from Finn HTML
-// Finn renders specs as e.g. "MerkeVolkswagen", "DrivstoffDiesel", "RegistreringsnummerBS75993"
-// in their specs section. We look for patterns like: >Label</...>...<...>Value<
 function extractSpec(html: string, label: string): string | null {
-  // Pattern 1: label and value in adjacent elements (common Finn layout)
-  // e.g. <dt>Registreringsnummer</dt><dd>BS75993</dd>
   const dtDdRegex = new RegExp(
     `>${label}<[^>]*>\\s*(?:<[^>]*>)*\\s*([^<]+)`,
     "i"
@@ -13,7 +9,6 @@ function extractSpec(html: string, label: string): string | null {
   const dtDdMatch = html.match(dtDdRegex)
   if (dtDdMatch?.[1]?.trim()) return dtDdMatch[1].trim()
 
-  // Pattern 2: concatenated text like "RegistreringsnummerBS75993"
   const concatRegex = new RegExp(`${label}\\s*([A-Za-z0-9ÆØÅæøå][A-Za-z0-9ÆØÅæøå\\s\\-\\.]+)`, "i")
   const concatMatch = html.match(concatRegex)
   if (concatMatch?.[1]?.trim()) return concatMatch[1].trim()
@@ -21,9 +16,8 @@ function extractSpec(html: string, label: string): string | null {
   return null
 }
 
-// Helper: extract description text between "Beskrivelse" section and "Spesifikasjoner"
+// Helper: extract description text
 function extractDescription(html: string): string {
-  // Remove all HTML tags to get plain text
   const plainText = html
     .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
     .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
@@ -35,8 +29,6 @@ function extractDescription(html: string): string {
     .replace(/&#(\d+);/g, (_, num) => String.fromCharCode(parseInt(num)))
     .replace(/\s+/g, " ")
 
-  // Try to find the description section
-  // Finn typically has "Beskrivelse" as a heading, followed by the ad text, then "Spesifikasjoner"
   const descMatch = plainText.match(
     /Beskrivelse\s+([\s\S]+?)(?:\s+Spesifikasjoner|\s+Utstyr\s|\s+Annonseinformasjon)/i
   )
@@ -44,7 +36,6 @@ function extractDescription(html: string): string {
     return descMatch[1].trim().substring(0, 2000)
   }
 
-  // Fallback: try to get text between common Finn sections
   const fallbackMatch = plainText.match(
     /(?:Nyttige lenker.*?)([\s\S]{50,}?)(?:Spesifikasjoner|Utstyr)/i
   )
@@ -63,7 +54,6 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // Finn.no now uses /mobility/item/ URLs
     const urls = [
       `https://www.finn.no/mobility/item/${finncode}`,
       `https://www.finn.no/car/used/ad.html?finnkode=${finncode}`,
@@ -114,25 +104,24 @@ export async function POST(request: NextRequest) {
     const title = getMetaContent("og:title") || ""
     const ogImage = getMetaContent("og:image") || ""
 
-    // Extract brand from specs or title
+    // Merke og modell
     const brand =
       extractSpec(html, "Merke") ||
       (title.match(/^([A-Za-zÆØÅæøå\-]+)\s/) || [])[1] ||
       ""
 
-    // Extract model from specs or title
     const model =
       extractSpec(html, "Modell(?!år)") ||
       (title.match(/^[A-Za-zÆØÅæøå\-]+\s+(.+?)(?:\s+\d{4}|\s*-\s*|,|$)/) || [])[1]?.trim() ||
       ""
 
-    // Extract year from specs or title
+    // År
     const yearStr = extractSpec(html, "Modellår")
     const year = yearStr
       ? parseInt(yearStr)
       : parseInt((title.match(/(\d{4})/) || [])[1] || `${new Date().getFullYear()}`)
 
-    // Extract mileage - look for "Kilometerstand" in specs
+    // Kilometerstand
     const mileageStr = extractSpec(html, "Kilometerstand")
     let mileage = 0
     if (mileageStr) {
@@ -142,7 +131,7 @@ export async function POST(request: NextRequest) {
       if (kmMatch) mileage = parseInt(kmMatch[1].replace(/\s/g, "")) || 0
     }
 
-    // Extract price - look for "Totalpris" or "Pris"
+    // Pris
     const priceStr = extractSpec(html, "Totalpris") || extractSpec(html, "Pris")
     let price = 0
     if (priceStr) {
@@ -152,7 +141,7 @@ export async function POST(request: NextRequest) {
       if (priceMatch) price = parseInt(priceMatch[1].replace(/\s/g, "")) || 0
     }
 
-    // Extract fuel type from Spesifikasjoner
+    // Drivstoff
     const fuelSpec = extractSpec(html, "Drivstoff")
     let fuel_type = "Bensin"
     if (fuelSpec) {
@@ -165,25 +154,96 @@ export async function POST(request: NextRequest) {
       else fuel_type = fuelSpec
     }
 
-    // Extract gearbox from Spesifikasjoner
+    // Girkasse
     const gearboxSpec = extractSpec(html, "Girkasse")
     let gearbox = "Manuell"
     if (gearboxSpec) {
       gearbox = gearboxSpec.toLowerCase().includes("automat") ? "Automat" : "Manuell"
     }
 
-    // Extract registration number from Spesifikasjoner
+    // Regnr
     const regnr = extractSpec(html, "Registreringsnummer") || ""
-    // Clean regnr - remove any trailing text like "Chassis nr" etc.
     const cleanRegnr = regnr.split(/\s/)[0] || ""
 
-    // Extract color from specs
+    // Farge
     const color = extractSpec(html, "Farge") || ""
 
-    // Extract description from the Beskrivelse section
+    // Beskrivelse
     const description = extractDescription(html)
 
-    // Collect images
+    // --- Nye felt ---
+
+    // Effekt (hk)
+    const powerStr = extractSpec(html, "Effekt")
+    let power: number | null = null
+    if (powerStr) {
+      const powerNum = parseInt(powerStr.replace(/[^\d]/g, ""))
+      if (powerNum > 0) power = powerNum
+    }
+
+    // Hjuldrift
+    const driveSpec = extractSpec(html, "Hjuldrift")
+    let drive_type: string | null = null
+    if (driveSpec) {
+      const d = driveSpec.toLowerCase()
+      if (d.includes("fire") || d.includes("4x4") || d.includes("awd")) drive_type = "Firehjulsdrift"
+      else if (d.includes("bak")) drive_type = "Bakhjulsdrift"
+      else if (d.includes("for")) drive_type = "Forhjulsdrift"
+      else drive_type = driveSpec
+    }
+
+    // Karosseri
+    const bodySpec = extractSpec(html, "Karosseri")
+    let body_type: string | null = bodySpec || null
+
+    // Antall seter
+    const seatsStr = extractSpec(html, "Antall seter") || extractSpec(html, "Seter")
+    let seats: number | null = null
+    if (seatsStr) {
+      const n = parseInt(seatsStr.replace(/[^\d]/g, ""))
+      if (n > 0) seats = n
+    }
+
+    // Antall dører
+    const doorsStr = extractSpec(html, "Antall dører") || extractSpec(html, "Dører")
+    let doors: number | null = null
+    if (doorsStr) {
+      const n = parseInt(doorsStr.replace(/[^\d]/g, ""))
+      if (n > 0) doors = n
+    }
+
+    // 1. gang registrert
+    const firstRegSpec =
+      extractSpec(html, "1\\. gang registrert") ||
+      extractSpec(html, "Første registrering") ||
+      extractSpec(html, "Reg\\.dato")
+    const first_registration = firstRegSpec || null
+
+    // Interiørfarge
+    const interiorColorSpec = extractSpec(html, "Interiørfarge") || extractSpec(html, "Interiorfarge")
+    const interior_color = interiorColorSpec || null
+
+    // Antall eiere
+    const ownersStr = extractSpec(html, "Antall eiere") || extractSpec(html, "Eiere")
+    let owners: number | null = null
+    if (ownersStr) {
+      const n = parseInt(ownersStr.replace(/[^\d]/g, ""))
+      if (n > 0) owners = n
+    }
+
+    // Neste EU-kontroll
+    const nextEuSpec = extractSpec(html, "Neste EU-kontroll") || extractSpec(html, "EU-kontroll")
+    const next_eu = nextEuSpec || null
+
+    // Rekkevidde WLTP
+    const rangeStr = extractSpec(html, "Rekkevidde") || extractSpec(html, "WLTP")
+    let range_km: number | null = null
+    if (rangeStr) {
+      const n = parseInt(rangeStr.replace(/[^\d]/g, ""))
+      if (n > 0) range_km = n
+    }
+
+    // Bilder
     const images: string[] = []
     if (ogImage) images.push(ogImage)
     const imgRegex = /(?:content|src)=["'](https:\/\/images\.finncdn\.no\/[^"']+)["']/gi
@@ -205,8 +265,18 @@ export async function POST(request: NextRequest) {
       color,
       regnr: cleanRegnr,
       description,
-      images: images.slice(0, 10),
+      images: images.slice(0, 20),
       finncode,
+      power,
+      drive_type,
+      body_type,
+      seats,
+      doors,
+      first_registration,
+      interior_color,
+      owners,
+      next_eu,
+      range_km,
     })
   } catch {
     return NextResponse.json(

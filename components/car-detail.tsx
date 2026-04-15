@@ -21,6 +21,11 @@ import {
   FileText,
   Check,
   ExternalLink,
+  Zap,
+  Users,
+  DoorOpen,
+  MapPin,
+  Shield,
 } from "lucide-react"
 
 interface CarData {
@@ -38,22 +43,30 @@ interface CarData {
   regnr: string | null
   images: string[]
   status: string
+  // Nye felt
+  power: number | null
+  drive_type: string | null
+  body_type: string | null
+  seats: number | null
+  doors: number | null
+  first_registration: string | null
+  interior_color: string | null
+  owners: number | null
+  next_eu: string | null
+  range_km: number | null
 }
 
 // Formater beskrivelse til lesbar tekst med avsnitt
 function formatDescription(text: string): string {
   if (!text) return ""
-  
-  // Erstatt flere linjeskift med doble linjeskift for avsnitt
+
   let formatted = text
     .replace(/\r\n/g, "\n")
     .replace(/\r/g, "\n")
-    // Behold doble linjeskift som avsnitt
     .replace(/\n{3,}/g, "\n\n")
-    // Legg til avsnitt etter punktum etterfulgt av stor bokstav (ny setning som kan være avsnitt)
     .replace(/\.(\s+)([A-ZÆØÅ])/g, ".\n\n$2")
     .trim()
-  
+
   return formatted
 }
 
@@ -64,70 +77,49 @@ function parseDescription(description: string | null): {
 } {
   if (!description) return { mainText: "", equipment: [] }
 
-  // Hvis beskrivelsen er tom eller bare whitespace
   const trimmed = description.trim()
   if (!trimmed) return { mainText: "", equipment: [] }
 
   const equipment: string[] = []
   const mainTextParts: string[] = []
 
-  // Sjekk om teksten inneholder inline bullet points (• på samme linje)
-  // F.eks. "Utstyrsnivået er høyt: • 21" felger • Bremser • Lydanlegg. Resten av teksten her."
   if (trimmed.includes(" • ") || trimmed.includes(": •")) {
-    // Split på bullet points
     const parts = trimmed.split(/\s*•\s*/)
-    
+
     for (let i = 0; i < parts.length; i++) {
       const part = parts[i].trim()
       if (!part) continue
-      
+
       if (i === 0) {
-        // Første del er intro-tekst som "Utstyrsnivået er høyt:"
         if (part.endsWith(":")) {
           mainTextParts.push(part.slice(0, -1).trim())
         } else {
           mainTextParts.push(part)
         }
       } else if (i === parts.length - 1) {
-        // Siste del kan inneholde både utstyr OG fortsettelse av tekst
-        // F.eks. "Kino modus med netflix osv. Rekkevidden (WLTP) er inntil ca. 514 km..."
-        // Finn første punktum etterfulgt av stor bokstav som indikerer ny setning
         const sentenceBreak = part.match(/^([^.]+(?:\.[^A-ZÆØÅ])?[^.]*?)\.(\s+[A-ZÆØÅ].+)$/s)
         if (sentenceBreak) {
-          // Første del er utstyr, resten er fortsettelse av beskrivelse
           const equipmentPart = sentenceBreak[1].trim()
           const continuationPart = sentenceBreak[2].trim()
-          if (equipmentPart.length > 1) {
-            equipment.push(equipmentPart)
-          }
-          if (continuationPart) {
-            mainTextParts.push(continuationPart)
-          }
+          if (equipmentPart.length > 1) equipment.push(equipmentPart)
+          if (continuationPart) mainTextParts.push(continuationPart)
         } else {
-          // Hele siste del er utstyr
-          if (part.length > 1) {
-            equipment.push(part)
-          }
+          if (part.length > 1) equipment.push(part)
         }
       } else {
-        // Midterste deler er utstyrselementer
-        if (part.length > 1) {
-          equipment.push(part)
-        }
+        if (part.length > 1) equipment.push(part)
       }
     }
-    
+
     const finalMainText = formatDescription(mainTextParts.join("\n\n"))
     return { mainText: finalMainText, equipment }
   }
 
-  // Fallback: håndter linjebaserte bullet points
   const lines = trimmed.split(/[\n\r]+/).map((line) => line.trim()).filter(Boolean)
   const mainTextLines: string[] = []
   let inEquipmentSection = false
 
   for (const line of lines) {
-    // Sjekk om vi er i en utstyrsseksjon
     const lowerLine = line.toLowerCase()
     if (
       lowerLine === "utstyr" ||
@@ -142,20 +134,15 @@ function parseDescription(description: string | null): {
       continue
     }
 
-    // Sjekk om linjen ser ut som et utstyrselement
     const startsWithBullet = /^[-•*–✓√]\s*/.test(line)
     const isEquipmentLine =
       startsWithBullet ||
       (inEquipmentSection && line.length < 80 && !line.endsWith(".") && !line.includes(":"))
 
     if (isEquipmentLine) {
-      // Fjern bullet-tegn og trim
       const cleanedLine = line.replace(/^[-•*–✓√]\s*/, "").trim()
-      if (cleanedLine && cleanedLine.length > 1) {
-        equipment.push(cleanedLine)
-      }
+      if (cleanedLine && cleanedLine.length > 1) equipment.push(cleanedLine)
     } else {
-      // Hvis vi var i utstyrsseksjon men denne linjen ikke matcher, avslutt seksjonen
       if (inEquipmentSection && (line.length > 80 || line.endsWith(".") || line.includes(":"))) {
         inEquipmentSection = false
       }
@@ -163,14 +150,10 @@ function parseDescription(description: string | null): {
     }
   }
 
-  // Hvis vi ikke fant noe mainText men har beskrivelse, bruk hele beskrivelsen
   const joinedText = mainTextLines.length > 0 ? mainTextLines.join("\n\n") : (equipment.length === 0 ? trimmed : "")
   const finalMainText = formatDescription(joinedText)
 
-  return {
-    mainText: finalMainText,
-    equipment,
-  }
+  return { mainText: finalMainText, equipment }
 }
 
 export function CarDetail({ car }: { car: CarData }) {
@@ -178,12 +161,23 @@ export function CarDetail({ car }: { car: CarData }) {
 
   const { mainText, equipment } = parseDescription(car.description)
 
-  const specs = [
+  // Hovedspesifikasjoner i grid under bildene
+  const gridSpecs = [
     { icon: Calendar, label: "Årsmodell", value: car.year.toString() },
     { icon: Gauge, label: "Kilometerstand", value: `${car.mileage.toLocaleString("nb-NO")} km` },
     { icon: Fuel, label: "Drivstoff", value: car.fuel_type },
     { icon: Settings, label: "Girkasse", value: car.gearbox },
+    ...(car.power ? [{ icon: Zap, label: "Effekt", value: `${car.power} hk` }] : []),
+    ...(car.drive_type ? [{ icon: Car, label: "Hjuldrift", value: car.drive_type }] : []),
+    ...(car.body_type ? [{ icon: Car, label: "Karosseri", value: car.body_type }] : []),
     ...(car.color ? [{ icon: Palette, label: "Farge", value: car.color }] : []),
+    ...(car.interior_color ? [{ icon: Palette, label: "Interiørfarge", value: car.interior_color }] : []),
+    ...(car.seats ? [{ icon: Users, label: "Antall seter", value: car.seats.toString() }] : []),
+    ...(car.doors ? [{ icon: DoorOpen, label: "Antall dører", value: car.doors.toString() }] : []),
+    ...(car.first_registration ? [{ icon: Calendar, label: "1. gang reg.", value: car.first_registration }] : []),
+    ...(car.owners != null ? [{ icon: Users, label: "Antall eiere", value: car.owners.toString() }] : []),
+    ...(car.next_eu ? [{ icon: Shield, label: "Neste EU-kontroll", value: car.next_eu }] : []),
+    ...(car.range_km ? [{ icon: MapPin, label: "Rekkevidde (WLTP)", value: `${car.range_km} km` }] : []),
     ...(car.regnr ? [{ icon: FileText, label: "Reg.nr", value: car.regnr }] : []),
   ]
 
@@ -302,7 +296,26 @@ export function CarDetail({ car }: { car: CarData }) {
               </div>
             )}
 
-            {/* Beskrivelse - under bilder på desktop */}
+            {/* Spesifikasjoner-grid under bildene */}
+            <Card className="mt-6 hidden lg:block">
+              <CardContent className="p-0">
+                <div className="grid grid-cols-2 sm:grid-cols-3 divide-x divide-y divide-border">
+                  {gridSpecs.map((spec) => (
+                    <div key={spec.label} className="flex items-center gap-3 px-4 py-3">
+                      <div className="w-8 h-8 rounded-md bg-muted flex items-center justify-center shrink-0">
+                        <spec.icon className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs text-muted-foreground">{spec.label}</p>
+                        <p className="text-sm font-medium text-foreground truncate">{spec.value}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Beskrivelse - under bildene på desktop */}
             {(mainText || (car.description && equipment.length === 0)) && (
               <Card className="mt-6 hidden lg:block">
                 <CardHeader className="pb-3">
@@ -390,15 +403,15 @@ export function CarDetail({ car }: { car: CarData }) {
               </CardContent>
             </Card>
 
-            {/* Spesifikasjoner */}
+            {/* Spesifikasjoner sidebar */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg">Spesifikasjoner</CardTitle>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="divide-y divide-border">
-                  {specs.map((spec, index) => (
-                    <div key={spec.label} className="flex items-center justify-between px-6 py-3">
+                  {gridSpecs.map((spec) => (
+                    <div key={`sidebar-${spec.label}`} className="flex items-center justify-between px-6 py-3">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center">
                           <spec.icon className="h-4 w-4 text-muted-foreground" />
@@ -437,8 +450,29 @@ export function CarDetail({ car }: { car: CarData }) {
           </div>
         </div>
 
+        {/* Spesifikasjoner-grid - mobil */}
+        <div className="lg:hidden mt-6">
+          <Card>
+            <CardContent className="p-0">
+              <div className="grid grid-cols-2 divide-x divide-y divide-border">
+                {gridSpecs.map((spec) => (
+                  <div key={`mobile-grid-${spec.label}`} className="flex items-center gap-3 px-4 py-3">
+                    <div className="w-8 h-8 rounded-md bg-muted flex items-center justify-center shrink-0">
+                      <spec.icon className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground">{spec.label}</p>
+                      <p className="text-sm font-medium text-foreground truncate">{spec.value}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Beskrivelse og utstyr - mobil */}
-        <div className="lg:hidden mt-8 space-y-6">
+        <div className="lg:hidden mt-6 space-y-6">
           {(mainText || (car.description && equipment.length === 0)) && (
             <Card>
               <CardHeader className="pb-3">
