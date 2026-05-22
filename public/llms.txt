@@ -1,38 +1,63 @@
 # Motoro AS
 
-> Bruktbilforhandler i Bergen siden 2016
+> Bruktbilforhandler i Bergen med over 5 års erfaring
 
-Motoro AS er en bruktbilforhandler lokalisert i Bergen, Norge. Vi tilbyr kvalitetsbruktbiler i alle prisklasser med forsikring og garanti.
+Motoro AS er en pålitelig bruktbilforhandler lokalisert på Søreide i Bergen, Norge. Vi tilbyr kvalitetsbruktbiler i alle prisklasser med forsikring og garanti. Vi er godkjent bilforhandler av Statens Vegvesen og kan levere bilen på dagen.
+
+## Om oss
+
+- Etablert: 2016
+- Lokasjon: Ytrebygdsvegen 37, Søreide, Bergen, Vestland
+- Spesialitet: Bruktbiler i alle prisklasser
+- Filosofi: Trygg og hyggelig bilhandel
 
 ## Kontaktinformasjon
 
 - Telefon: 911 35 991
 - E-post: post@motoro.no
-- Adresse: Bergen, Norge
-- Åpningstider: Etter avtale
+- Adresse: Ytrebygdsvegen 37, Søreide, Bergen
+- Åpningstider: Etter avtale (også kveld og helg)
+- Finn.no: https://www.finn.no/mobility/dealer/3552218/motoro-as
 
 ## Tjenester
 
 ### Bruktbiler
-Vi tilbyr et bredt utvalg av bruktbiler i alle prisklasser. Alle våre biler er EU-godkjent.
+Vi tilbyr et bredt utvalg av bruktbiler i alle prisklasser. Alle våre biler er EU-godkjent og gjennomgått før salg. Vi har biler fra mange merker inkludert Tesla, BMW, Audi, Volvo, Mercedes, Volkswagen og flere.
 
 ### Forsikring
-Vi leverer forsikring gjennom Gjensidige ved kjøp av bil hos oss.
+Vi leverer bilforsikring gjennom Gjensidige ved kjøp av bil hos oss. Forsikringen kan tegnes direkte ved overleveringen.
 
 ### Garanti
 Alle våre biler kan leveres med garanti gjennom Fragus:
-- GoSafe Basic: 6 måneder inkludert garanti
-- GoSafe Premium: 6-36 måneder utvidet garanti
-- GoSafe Complete: 6-36 måneder omfattende garanti
+- GoSafe Basic: 6 måneder inkludert garanti med dekning på motor, girkasse og drivverk
+- GoSafe Premium: 6-36 måneder utvidet garanti med bredere dekning
+- GoSafe Complete: 6-36 måneder omfattende garanti med mest mulig dekning
 
-### Selge bil
-Vi kjøper bruktbiler. Ta kontakt for verdivurdering.
+### Selge bil / Innbytte
+Vi kjøper bruktbiler og tilbyr innbytte. Ta kontakt for verdivurdering av din bil.
+
+### Frakt og transport
+Vi kan ordne transport av bil til hele Norge. Henter gjerne på flyplassen om du kommer langveis fra.
+
+## Praktisk informasjon
+
+- Som godkjent bilforhandler oppbevarer vi alle skilt hos oss
+- Vi kan levere bilen på dagen etter avtale
+- Visning og prøvekjøring etter avtale, også på kveld og helg
+- Formidling av biler for private kunder
 
 ## Nettstedskart
 
 - Hjem: https://motoro.no
-- Biler: https://motoro.no/biler
+- Alle biler: https://motoro.no/biler
 - Forsikring: https://motoro.no/forsikring
 - Garanti: https://motoro.no/garanti
 - Selge bil: https://motoro.no/selge-bil
-- Kontakt: https://motoro.no/kontakt
+- Kontakt oss: https://motoro.no/kontakt
+
+## Teknisk informasjon
+
+- Nettsted bygget med: Next.js, React, Tailwind CSS
+- Database: Supabase
+- Hosting: Vercel
+- Bilannonser synkroniseres automatisk fra Finn.no
