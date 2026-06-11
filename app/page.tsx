@@ -6,6 +6,22 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Shield, Car, Leaf, CheckCircle, ArrowRight, Phone } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "Motoro AS | Bruktbiler i Bergen",
+  description:
+    "Motoro AS tilbyr kvalitetsbruktbiler i alle prisklasser i Bergen. Forsikring og garanti på alle våre biler. Ring 911 35 991.",
+  alternates: {
+    canonical: "https://motoro.no",
+  },
+  openGraph: {
+    title: "Motoro AS | Bruktbiler i Bergen",
+    description:
+      "Motoro AS tilbyr kvalitetsbruktbiler i alle prisklasser i Bergen. Forsikring og garanti på alle våre biler.",
+    url: "https://motoro.no",
+  },
+}
 
 const features = [
   {

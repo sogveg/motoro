@@ -1,5 +1,3 @@
-import Script from "next/script"
-
 export function LocalBusinessJsonLd() {
   const jsonLd = {
     "@context": "https://schema.org",
@@ -12,18 +10,16 @@ export function LocalBusinessJsonLd() {
     email: "post@motoro.no",
     address: {
       "@type": "PostalAddress",
-      addressLocality: "Bergen",
+      streetAddress: "Ytrebygdsvegen 37",
+      addressLocality: "Søreidgrend",
+      postalCode: "5251",
+      addressRegion: "Bergen",
       addressCountry: "NO",
     },
     geo: {
       "@type": "GeoCoordinates",
       latitude: 60.3913,
       longitude: 5.3221,
-    },
-    openingHoursSpecification: {
-      "@type": "OpeningHoursSpecification",
-      dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
-      description: "Etter avtale",
     },
     priceRange: "$$",
     currenciesAccepted: "NOK",
@@ -33,7 +29,6 @@ export function LocalBusinessJsonLd() {
       name: "Bergen",
     },
     foundingDate: "2016",
-    sameAs: [],
     hasOfferCatalog: {
       "@type": "OfferCatalog",
       name: "Bruktbiler",
@@ -65,11 +60,10 @@ export function LocalBusinessJsonLd() {
   }
 
   return (
-    <Script
+    <script
       id="local-business-jsonld"
       type="application/ld+json"
       dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      strategy="afterInteractive"
     />
   )
 }
@@ -88,11 +82,10 @@ export function WebsiteJsonLd() {
   }
 
   return (
-    <Script
+    <script
       id="website-jsonld"
       type="application/ld+json"
       dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      strategy="afterInteractive"
     />
   )
 }
@@ -110,11 +103,93 @@ export function BreadcrumbJsonLd({ items }: { items: { name: string; url: string
   }
 
   return (
-    <Script
+    <script
       id="breadcrumb-jsonld"
       type="application/ld+json"
       dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      strategy="afterInteractive"
+    />
+  )
+}
+
+interface CarJsonLdData {
+  id: string
+  brand: string
+  model: string
+  year: number
+  mileage: number
+  price: number
+  fuel_type: string
+  gearbox: string
+  color: string | null
+  description: string | null
+  body_type: string | null
+  drive_type: string | null
+  doors: number | null
+  seats: number | null
+  power: number | null
+  images: string[]
+  status: string
+}
+
+export function VehicleJsonLd({ car }: { car: CarJsonLdData }) {
+  const jsonLd: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "Car",
+    name: `${car.brand} ${car.model} ${car.year}`,
+    url: `https://motoro.no/biler/${car.id}`,
+    brand: {
+      "@type": "Brand",
+      name: car.brand,
+    },
+    model: car.model,
+    vehicleModelDate: car.year.toString(),
+    mileageFromOdometer: {
+      "@type": "QuantitativeValue",
+      value: car.mileage,
+      unitCode: "KMT",
+    },
+    fuelType: car.fuel_type,
+    vehicleTransmission: car.gearbox,
+    offers: {
+      "@type": "Offer",
+      price: car.price,
+      priceCurrency: "NOK",
+      availability:
+        car.status === "active"
+          ? "https://schema.org/InStock"
+          : "https://schema.org/SoldOut",
+      seller: {
+        "@type": "AutoDealer",
+        name: "Motoro AS",
+        url: "https://motoro.no",
+        telephone: "+4791135991",
+      },
+    },
+  }
+
+  if (car.color) jsonLd.color = car.color
+  if (car.body_type) jsonLd.bodyType = car.body_type
+  if (car.drive_type) jsonLd.driveWheelConfiguration = car.drive_type
+  if (car.doors) jsonLd.numberOfDoors = car.doors
+  if (car.seats) jsonLd.seatingCapacity = car.seats
+  if (car.description) jsonLd.description = car.description.substring(0, 500)
+  if (car.images?.[0]) jsonLd.image = car.images[0]
+  if (car.power) {
+    jsonLd.vehicleEngine = {
+      "@type": "EngineSpecification",
+      enginePower: {
+        "@type": "QuantitativeValue",
+        value: car.power,
+        unitCode: "HRW",
+      },
+    }
+  }
+
+  return (
+    <script
+      id="vehicle-jsonld"
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
     />
   )
 }

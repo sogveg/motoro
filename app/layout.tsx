@@ -71,12 +71,11 @@ export const metadata: Metadata = {
     },
   },
   verification: {
-    google: "your-google-verification-code",
+    google: "dtoTvG1V16kNdLze7A_anvz4oGQusu-dIx3P55EKR5Q",
   },
   alternates: {
     canonical: "https://motoro.no",
   },
-    generator: 'v0.app'
 }
 
 export default function RootLayout({
